@@ -10,6 +10,7 @@ let g:ale_echo_msg_format = get(g:, 'ale_echo_msg_format', '%code: %%s')
 
 let s:cursor_timer = -1
 let s:last_pos = [0, 0, 0]
+let s:disable_cursor = 0
 
 function! ale#cursor#TruncatedEcho(original_message) abort
     let l:message = a:original_message
@@ -60,14 +61,20 @@ function! s:StopCursorTimer() abort
 endfunction
 
 function! ale#cursor#EchoCursorWarning(...) abort
+    if s:disable_cursor
+        return
+    endif
+    let s:disable_cursor = 1
     let l:buffer = bufnr('')
 
     if !g:ale_echo_cursor && !g:ale_cursor_detail
+        let s:disable_cursor = 0
         return
     endif
 
     " Only echo the warnings in normal mode, otherwise we will get problems.
     if mode(1) isnot# 'n'
+        let s:disable_cursor = 0
         return
     endif
 
@@ -98,9 +105,13 @@ function! ale#cursor#EchoCursorWarning(...) abort
             " call ale#preview#CloseIfTypeMatches('ale-preview')
         endif
     endif
+    let s:disable_cursor = 0
 endfunction
 
 function! ale#cursor#EchoCursorWarningWithDelay() abort
+    if s:disable_cursor
+        return
+    endif
     let l:buffer = bufnr('')
 
     if !g:ale_echo_cursor && !g:ale_cursor_detail
