@@ -95,7 +95,7 @@ function! ale#cursor#EchoCursorWarning(...) abort
         if !empty(l:loc)
             call s:ShowCursorDetailForItem(l:loc, {'stay_here': 1})
         else
-            call ale#preview#CloseIfTypeMatches('ale-preview')
+            " call ale#preview#CloseIfTypeMatches('ale-preview')
         endif
     endif
 endfunction
