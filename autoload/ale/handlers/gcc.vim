@@ -103,48 +103,49 @@ endfunction
 
 function! ale#handlers#gcc#HandleGCCFormat(buffer, lines) abort
     let l:output = []
+    let l:current_error = []
+    let l:current_type = ''
+    let l:text = ''
+    let l:detail = ''
 
-    for l:match in ale#util#GetMatches(a:lines, s:pattern)
-        " Filter out the pragma errors
-        if s:IsHeaderFile(bufname(bufnr('')))
-        \&& l:match[5][:len(s:pragma_error) - 1] is# s:pragma_error
-            continue
-        endif
-
-        " If the 'error type' is a note, make it detail related to
-        " the previous error parsed in output
-        if l:match[4] is# 'note'
-            if !empty(l:output)
-                if !has_key(l:output[-1], 'detail')
-                    let l:output[-1].detail = l:output[-1].text
-                endif
-
-                let l:output[-1].detail = l:output[-1].detail . "\n"
-                \   . s:RemoveUnicodeQuotes(l:match[0])
-            endif
-
-            continue
-        endif
-
+    for l:line in a:lines
+      let l:match = matchlist(l:line, s:pattern)
+      if !empty(l:match)
         let l:item = {
         \   'lnum': str2nr(l:match[2]),
         \   'type': (l:match[4] is# 'error' || l:match[4] is# 'fatal error') ? 'E' : 'W',
         \   'text': s:RemoveUnicodeQuotes(l:match[5]),
         \}
-
         if !empty(l:match[3])
             let l:item.col = str2nr(l:match[3])
         endif
-
         " If the filename is something like <stdin>, <nofile> or -, then
         " this is an error for the file we checked.
         if l:match[1] isnot# '-' && l:match[1][0] isnot# '<'
             let l:item['filename'] = l:match[1]
         endif
 
-        call add(l:output, l:item)
+        if l:match[4] is# 'error' || l:match[4] is# 'fatal error' || l:match[4] is# 'warning'
+          for l:err in l:current_error
+            let l:err.detail = l:detail
+            call add(l:output, l:err)
+          endfor
+          let l:current_error = [l:item]
+          let l:current_type = l:item.type
+          let l:text = l:item.text
+          let l:detail = ''
+        elseif strpart(l:match[5], strlen(l:match[5]) - 14) is# 'requested here'
+          let l:item.type = l:current_type
+          let l:item.text = l:text
+          call add(l:current_error, l:item)
+        endif
+      endif
+      let l:detail .= "\n".l:line
     endfor
-
+    for l:err in l:current_error
+      let l:err.detail = l:detail
+      call add(l:output, l:err)
+    endfor
     return l:output
 endfunction
 
