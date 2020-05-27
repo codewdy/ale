@@ -79,6 +79,7 @@ function! ale#cursor#EchoCursorWarning(...) abort
     endif
 
     if ale#ShouldDoNothing(l:buffer)
+        let s:disable_cursor = 0
         return
     endif
 
