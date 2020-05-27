@@ -137,7 +137,8 @@ function! ale#handlers#gcc#HandleGCCFormat(buffer, lines) abort
         elseif strpart(l:match[5], strlen(l:match[5]) - 14) is# 'requested here'
           let l:item.type = l:current_type
           let l:item.text = l:text
-          call add(l:current_error, l:item)
+          " call add(l:current_error, l:item)
+          let l:current_error = [l:item]
         endif
       endif
       let l:detail .= "\n".l:line
